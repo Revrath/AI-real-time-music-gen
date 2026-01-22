@@ -9,8 +9,8 @@ import os
 import random
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
-MODEL_PATH = "weights-improvement-47-2.2968-bigger.keras"
-DATA_PATH = "music_data.pkl"
+MODEL_PATH = "weights-04-4.6735-seq_len-50.keras"
+DATA_PATH = "output/music_data.pkl"
 SAFETY_LEVEL = 0.0 # Adjust between 1.0 (safe, slow notes) to 0.0 (dangerous, fast notes)
 SEQUENCE_LENGTH = 50 # must match train.py
 NOTES_TO_GENERATE = 100 # how long the music will be 
@@ -101,7 +101,7 @@ def save_to_midi(tokens):
         output_notes.append(new_element)
         offset += duration
 
-    output_filename = f"ai_music_danger_{SAFETY_LEVEL}_random_number_{random.random()}.mid"
+    output_filename = f"output/ai_music_danger_{SAFETY_LEVEL}_random_number_{random.random()}.mid"
     stream.Stream(output_notes).write('midi', fp=output_filename)
     print(f"Saved to '{output_filename}'")
 

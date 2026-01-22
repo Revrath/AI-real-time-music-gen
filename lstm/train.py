@@ -57,7 +57,7 @@ def train_network():
 
     model = create_model(X, n_vocab)
 
-    filepath = "weights-{epoch:02d}-{loss:.4f}-seq_len-{SEQUENCE_LENGTH}.keras"
+    filepath = "weights-{epoch:02d}-{loss:.4f}-seq_len-"+f"{SEQUENCE_LENGTH}"+".keras"
     checkpoint = ModelCheckpoint(
         filepath, 
         monitor='loss',

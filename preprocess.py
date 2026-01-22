@@ -69,9 +69,7 @@ def get_notes():
     all_labels = [] # danger (0.0 to 1.0)
     
     files = glob.glob(DATA_DIR)[:50]
-    print(f"Found {len(files)} MIDI files. Processing...")
     for file in files:
-        print(f"Parsing {file}...")
         try:
             midi = converter.parse(file)
             midi = transpose_to_c_major(midi)
@@ -81,7 +79,7 @@ def get_notes():
             # IMPORTANT: counting notes must be done before extracting single track (not like that ever happened)
             try:
                 duration_quarters = midi.highestTime
-                # Estimate: 120 BPM = 2 quarters per second
+                # 120 BPM = 2 quarters per second
                 duration_seconds = duration_quarters / 2.0 
                 
                 notes_per_second = len(song_notes) / (duration_seconds + 0.001)
@@ -101,10 +99,10 @@ def get_notes():
         except Exception as e:
             print(f"error parsing {file}: {e}")
 
-        with open('music_data.pkl', 'wb') as filepath:
+        with open('output/music_data.pkl', 'wb') as filepath:
             pickle.dump({'notes': all_notes, 'labels': all_labels}, filepath)
         
-        print(f"\nSaved {len(all_notes)} notes to 'music_data.pkl'")
+        print(f"\nSaved {len(all_notes)} notes to 'output/music_data.pkl'")
 
 if __name__ == '__main__':
     get_notes()
