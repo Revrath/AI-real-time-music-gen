@@ -5,15 +5,16 @@ from torch.utils.data import DataLoader
 from data_into_pytorch_tensors import MusicDataset
 from transformer_model import MusicTransformer
 
-DATA_PATH = "lstm-ai-music-gen/output/music_data_danger_duration.pkl"
+DATA_PATH = "lstm-ai-music-gen/output/music_data_calmer_and_4battles_seqlen40.pkl"
 # CPU friendly settings
-SEQ_LEN = 32        
-BATCH_SIZE = 16
+SEQ_LEN = 40        
+BATCH_SIZE = 64 # I need bigger batch size when having small step or it will see only one thing in one pass
 EMBED_DIM = 128
 NUM_HEADS = 4  
 NUM_LAYERS = 2
 EPOCHS = 20
 LEARNING_RATE = 0.001
+DROPOUT = 0.3
 
 def train():
     if torch.cuda.is_available():
@@ -34,7 +35,8 @@ def train():
         embed_dim=EMBED_DIM,
         num_heads=NUM_HEADS,
         num_layers=NUM_LAYERS,
-        seq_len=SEQ_LEN
+        seq_len=SEQ_LEN,
+        dropout= DROPOUT 
     ).to(device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE)
@@ -61,6 +63,12 @@ def train():
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
+
+            if i % 10 == 0:
+                print(f"Epoch {epoch+1} | Batch {i}/{len(loader)} | "
+                    f"Total: {loss.item():.4f} | "
+                    f"Note: {loss_note.item():.4f} | "
+                    f"Dur: {loss_dur.item():.4f}")
 
         avg_loss = total_loss / len(loader)
         epoch_time = time.time() - epoch_start

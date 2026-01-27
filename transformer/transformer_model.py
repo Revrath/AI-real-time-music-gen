@@ -3,7 +3,7 @@ import torch.nn as nn
 import math
 
 class MusicTransformer(nn.Module):
-    def __init__(self, note_vocab_size, dur_vocab_size, embed_dim=128, num_heads=2, num_layers=2, seq_len=100):
+    def __init__(self, note_vocab_size, dur_vocab_size, embed_dim=128, num_heads=2, num_layers=2, seq_len=100, dropout=0.1):
         super().__init__()
         self.seq_len = seq_len
         
@@ -19,7 +19,7 @@ class MusicTransformer(nn.Module):
         self.danger_projection = nn.Linear(1, embed_dim)
 
         # feedforward layer
-        encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads, batch_first=True)
+        encoder_layer = nn.TransformerEncoderLayer(d_model=embed_dim, nhead=num_heads, batch_first=True, dropout=dropout)
         # stack num_layers of the above encoder_layer
         self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         

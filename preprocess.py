@@ -4,10 +4,8 @@ import numpy as np
 from music21 import converter, instrument, note, chord, pitch, stream
 import os
 
-DATA_DIR = "lstm-ai-music-gen\FinalFantasy9\*.mid" 
-SEQUENCE_LENGTH = 50         # window size (must match LSTM)
-DANGER_THRESHOLD = 8.0        # Notes per second for a song to be considered "battle theme"
-
+SEQUENCE_LENGTH = 40        # window size (MATCH THE MODEL)
+                            # its size determine remembering patterns - too small and chaos comes and galaxies burn, too big and model learns songs by heart
 def transpose_to_c_major(score):
     """
     analyse the key of the song and change it to C Major (if major) / A Minor (if minor)
@@ -63,12 +61,15 @@ def get_single_track_notes(midi_score):
     song_durations = []
     for element in notes_to_parse:
         dur = quantize_duration(element.quarterLength)
-        song_durations.append(dur)
         if isinstance(element, note.Note):
             song_notes.append(str(element.pitch.midi)) 
+            song_durations.append(dur)
+
         elif isinstance(element, chord.Chord):
             sorted_pitches = sorted([n.midi for n in element.pitches])
             song_notes.append('.'.join(str(n) for n in sorted_pitches))
+            song_durations.append(dur)
+
     return song_notes, song_durations
 
 def get_notes():
@@ -76,50 +77,47 @@ def get_notes():
     all_labels = [] # danger (0.0 to 1.0)
     all_durations = []
 
-    files = glob.glob(DATA_DIR)
-    print(f"Found {len(files)} files")
-    for file in files:
-        try:
-            midi = converter.parse(file)
-            midi = transpose_to_c_major(midi)
-            song_notes = midi.flat.notes
-            melody_track, melody_durations = get_single_track_notes(midi)
+    # in git history you can find simple script to distinguish safe vs battle midi files, which worked meh
+    folders_config = [
+        ("lstm-ai-music-gen/battle/*.mid", 0.0), 
+        ("lstm-ai-music-gen/calmer/*.mid", 1.0)
+    ]
 
-            # IMPORTANT: counting notes must be done before extracting single track (not like that ever happened)
+    for folder_path, label_value in folders_config:
+        files = glob.glob(folder_path)
+        print(f"\nProcessing folder: {folder_path} (Label: {label_value}) - Found {len(files)} files")
+
+        for file in files:
             try:
-                duration_quarters = midi.highestTime
-                duration_seconds = duration_quarters / 2.0 
+                print(f"Processing: {os.path.basename(file)}")
+                midi = converter.parse(file)
+                midi = transpose_to_c_major(midi)
                 
-                notes_per_second = len(song_notes) / (duration_seconds + 0.001)
+                melody_track, melody_durations = get_single_track_notes(midi)
+
+                label = label_value
+
+                if len(melody_track) != len(melody_durations):
+                    print("   -> SKIP: notes and durations length mismatch")
+                    continue
+
+                # just to make sure
+                str_durations = [str(d) for d in melody_durations]
+
+                all_notes.extend(melody_track)
+                all_durations.extend(str_durations)
+                all_labels.extend([label] * len(melody_track))
                 
-                if notes_per_second > DANGER_THRESHOLD:
-                    label = 0.0 
-                    print(f"   -> Label: DANGER (Density: {notes_per_second:.2f} notes/sec)")
-                else:
-                    label = 1.0 
-                    print(f"   -> Label: SAFE   (Density: {notes_per_second:.2f} notes/sec)")
-            except:
-                label = 1.0 
-                print("   -> Label: SAFE   (Density: unknown)")
+            except Exception as e:
+                print(f"error parsing {file}: {e}")
 
-            if len(melody_track) != len(melody_durations):
-                print("   -> SKIP: notes and durations length mismatch")
-                continue
+    if not os.path.exists('lstm-ai-music-gen/output'):
+        os.makedirs('lstm-ai-music-gen/output')
 
-            # just to make sure
-            str_durations = [str(d) for d in melody_durations]
-
-            all_notes.extend(melody_track)
-            all_durations.extend(str_durations)
-            all_labels.extend([label] * len(melody_track))
-            
-        except Exception as e:
-            print(f"error parsing {file}: {e}")
-
-        with open('lstm-ai-music-gen/output/music_data.pkl', 'wb') as filepath:
-            pickle.dump({'notes': all_notes, 'durations': all_durations, 'labels': all_labels}, filepath)
-        
-        print(f"\nSaved {len(all_notes)} notes to 'output/music_data.pkl'")
+    with open('lstm-ai-music-gen/output/music_data.pkl', 'wb') as filepath:
+        pickle.dump({'notes': all_notes, 'durations': all_durations, 'labels': all_labels}, filepath)
+    
+    print(f"\nSaved {len(all_notes)} notes to 'output/music_data.pkl'")
 
 if __name__ == '__main__':
     get_notes()
