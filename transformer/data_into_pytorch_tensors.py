@@ -4,7 +4,7 @@ import pickle
 import numpy as np
 
 class MusicDataset(Dataset):
-    def __init__(self, data_path, sequence_length, step=1):    # step is moving window, higher is fast learning, risking missing notes order
+    def __init__(self, data_path, sequence_length, step=3):    # step is moving window, higher is fast learning, risking missing notes order
                                                                 # might be useful with large or augmented datasets
         with open(data_path, 'rb') as f:
             data = pickle.load(f)

@@ -6,10 +6,11 @@ import os
 import random
 from transformer_model import MusicTransformer
 
-MODEL_PATH = "lstm-ai-music-gen\\output\\best_model1.6689.pth"
-DATA_PATH = "lstm-ai-music-gen/output/music_data_danger_duration.pkl"
-SAFETY_LEVEL = 0.0  # 0.0 = Battle, 1.0 = Safe
-SEQUENCE_LENGTH = 32 
+# MODEL_PATH = "lstm-ai-music-gen\\output\\best_model1.6689.pth"
+MODEL_PATH = "lstm-ai-music-gen/output/best_model0.2192.pth"
+DATA_PATH = "lstm-ai-music-gen/output/music_data_calmer_and_4battles_seqlen40.pkl"
+SAFETY_LEVEL = 1.0  # 0.0 = Battle, 1.0 = Safe
+SEQUENCE_LENGTH = 40 
 NOTES_TO_GENERATE = 100 
 
 EMBED_DIM = 128
@@ -17,8 +18,8 @@ NUM_HEADS = 4
 NUM_LAYERS = 2
 
 # the higher the more chaotic/creative
-TEMPERATURE_NOTE = 1.3
-TEMPERATURE_DUR = 0.8
+TEMPERATURE_NOTE = 1.0
+TEMPERATURE_DUR = 1.0
 
 def sample_with_temperature(predictions, temperature):
     predictions = np.asarray(predictions).astype('float64')

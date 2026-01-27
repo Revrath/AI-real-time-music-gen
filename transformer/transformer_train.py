@@ -5,16 +5,16 @@ from torch.utils.data import DataLoader
 from data_into_pytorch_tensors import MusicDataset
 from transformer_model import MusicTransformer
 
-DATA_PATH = "lstm-ai-music-gen/output/music_data_calmer_and_4battles_seqlen40.pkl"
+DATA_PATH = "lstm-ai-music-gen/output/music_dataff9_only0label.pkl"
 # CPU friendly settings
-SEQ_LEN = 40        
+SEQ_LEN = 50        
 BATCH_SIZE = 64 # I need bigger batch size when having small step or it will see only one thing in one pass
-EMBED_DIM = 128
+EMBED_DIM = 256
 NUM_HEADS = 4  
 NUM_LAYERS = 2
 EPOCHS = 20
 LEARNING_RATE = 0.001
-DROPOUT = 0.3
+DROPOUT = 0.2
 
 def train():
     if torch.cuda.is_available():

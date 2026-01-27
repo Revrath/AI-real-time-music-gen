@@ -43,7 +43,7 @@ class MusicTransformer(nn.Module):
             d = danger_level.view(B, 1, 1).float()
             
             # [Batch, 1, Embed_Dim]
-            d = self.danger_projection(d)            
+            d = self.danger_projection(d)
             x = x + d
 
         # The masked positions are filled with float('-inf'). Unmasked positions are filled with float(0.0).

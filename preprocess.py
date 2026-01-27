@@ -79,12 +79,12 @@ def get_notes():
 
     # in git history you can find simple script to distinguish safe vs battle midi files, which worked meh
     folders_config = [
-        ("lstm-ai-music-gen/battle/*.mid", 0.0), 
-        ("lstm-ai-music-gen/calmer/*.mid", 1.0)
+        ("lstm-ai-music-gen/FinalFantasy9/*.mid", 0.0), # now im trying without danger labels
+        # ("lstm-ai-music-gen/calmer/*.mid", 1.0)
     ]
 
     for folder_path, label_value in folders_config:
-        files = glob.glob(folder_path)
+        files = glob.glob(folder_path)[:50]
         print(f"\nProcessing folder: {folder_path} (Label: {label_value}) - Found {len(files)} files")
 
         for file in files:

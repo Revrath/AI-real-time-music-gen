@@ -8,8 +8,9 @@ import pickle
 from transformer_model import MusicTransformer
 
 # MODEL_PATH = "lstm-ai-music-gen/output/best_model0.6463.pth" # FF9
-MODEL_PATH = "lstm-ai-music-gen\output\\best_model1.8159.pth" # castlevania and nintendo calm songs (small dataset)
-DATA_PATH = "lstm-ai-music-gen/output/music_data_danger_duration.pkl"
+# MODEL_PATH = "lstm-ai-music-gen\output\\best_model1.8159.pth" # castlevania and nintendo calm songs (small dataset)
+MODEL_PATH = "lstm-ai-music-gen\\output\\best_model0.2466.pth" # calmer songs and 4 battle castlevaia themes
+DATA_PATH = "lstm-ai-music-gen/output/music_dataff9_only0label.pkl"
 BPM = 120
 QPM = 60 / BPM 
 
@@ -38,7 +39,7 @@ def load_ai():
     int_to_note = {i: n for i, n in enumerate(note_vocab)}
     int_to_dur = {i: d for i, d in enumerate(dur_vocab)}
     
-    model = MusicTransformer(len(note_vocab), len(dur_vocab), 128, 4, 2, 32)
+    model = MusicTransformer(len(note_vocab), len(dur_vocab), 256, 4, 2, 50, 0.2) # parameters must match trained model
     model.load_state_dict(torch.load(MODEL_PATH, map_location=device))
     model.to(device)
     model.eval()
@@ -86,8 +87,8 @@ def generator_thread(model, raw_notes, raw_durs, n2i, d2i, i2n, i2d, device):
             logits_n = out_note[0, -1, :].cpu().numpy()
             logits_d = out_dur[0, -1, :].cpu().numpy()
             
-            idx_n = robust_sample(logits_n, temperature=0.8)
-            idx_d = robust_sample(logits_d, temperature=0.8)
+            idx_n = robust_sample(logits_n, temperature=1)
+            idx_d = robust_sample(logits_d, temperature=1)
 
         # decode
         note_str = i2n[idx_n]
@@ -110,7 +111,12 @@ def player_thread():
         print(f"Błąd MIDI: {e}")
         return
 
-    print(f"-> Gra dla was {port.name}")
+    print(f"-> Our very special guest is {port.name}")
+    weather = "safe"
+    if GLOBAL_STATE['danger_level'] == 0.0:
+        weather = "dangerous"
+
+    print(f"the weather outside is {weather}")
 
     while GLOBAL_STATE['running']:
         try:
@@ -154,6 +160,7 @@ if __name__ == "__main__":
     print("  Type 'safe', 'battle' or 'exit'")
     print("="*40 + "\n")
     
+    time.sleep(0.3)
     try:
         while True:
             cmd = input("Command > ").strip().lower()
