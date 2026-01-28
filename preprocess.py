@@ -6,6 +6,7 @@ import os
 
 SEQUENCE_LENGTH = 40        # window size (MATCH THE MODEL)
                             # its size determine remembering patterns - too small and chaos comes and galaxies burn, too big and model learns songs by heart
+DANGER_THRESHOLD = 0.6
 def transpose_to_c_major(score):
     """
     analyse the key of the song and change it to C Major (if major) / A Minor (if minor)
@@ -29,6 +30,19 @@ COMMON_DURATIONS = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0, 3.0, 4.0]
 def quantize_duration(dur):
     return min(COMMON_DURATIONS, key=lambda x: abs(x - dur))
 
+def get_global_density(midi_score):
+    try:
+        # flatten merges all parts 
+        offsets = sorted(list(set(n.offset for n in midi_score.flatten().notes)))
+        
+        if len(offsets) < 2: return 1.0
+
+        intervals = [offsets[i+1] - offsets[i] for i in range(len(offsets)-1)]
+        
+        return sum(intervals) / len(intervals)
+        
+    except:
+        return 1.0 
 
 def get_single_track_notes(midi_score):
     try:
@@ -52,22 +66,32 @@ def get_single_track_notes(midi_score):
                 break
     
     if target_part is None:
-        print("taking whole score with flatten due to lack of reasonable part")
-        notes_to_parse = midi_score.flatten().notes
+        print("skipping, no reasonable track")
+        return [], []
     else:
         notes_to_parse = target_part.flatten().notes
 
     song_notes = []
     song_durations = []
-    for element in notes_to_parse:
-        dur = quantize_duration(element.quarterLength)
-        if isinstance(element, note.Note):
-            song_notes.append(str(element.pitch.midi)) 
-            song_durations.append(dur)
+    # I need to sort by offsets for duration calculation (flatten might mess it up)
+    sorted_elements = sorted(list(notes_to_parse), key=lambda x: x.offset)    
+    rhythmic_intervals = []
 
+    for i, element in enumerate(sorted_elements):
+        dur = quantize_duration(element.quarterLength)
+
+        pitch_val = None
+        if isinstance(element, note.Note):
+            pitch_val = str(element.pitch.midi)
+            
         elif isinstance(element, chord.Chord):
-            sorted_pitches = sorted([n.midi for n in element.pitches])
-            song_notes.append('.'.join(str(n) for n in sorted_pitches))
+            if len(element.pitches) > 0:
+                # lets try without chords
+                top_note = max([n.midi for n in element.pitches])
+                pitch_val = str(top_note)
+
+        if pitch_val is not None:
+            song_notes.append(pitch_val)
             song_durations.append(dur)
 
     return song_notes, song_durations
@@ -77,14 +101,13 @@ def get_notes():
     all_labels = [] # danger (0.0 to 1.0)
     all_durations = []
 
-    # in git history you can find simple script to distinguish safe vs battle midi files, which worked meh
     folders_config = [
-        ("lstm-ai-music-gen/FinalFantasy9/*.mid", 0.0), # now im trying without danger labels
+        ("lstm-ai-music-gen/FinalFantasy9/*.mid", 0.0), # here i was trying without danger labels
         # ("lstm-ai-music-gen/calmer/*.mid", 1.0)
     ]
 
     for folder_path, label_value in folders_config:
-        files = glob.glob(folder_path)[:50]
+        files = glob.glob(folder_path)
         print(f"\nProcessing folder: {folder_path} (Label: {label_value}) - Found {len(files)} files")
 
         for file in files:
@@ -92,15 +115,24 @@ def get_notes():
                 print(f"Processing: {os.path.basename(file)}")
                 midi = converter.parse(file)
                 midi = transpose_to_c_major(midi)
-                
+
+                avg_global_interval = get_global_density(midi)
                 melody_track, melody_durations = get_single_track_notes(midi)
 
-                label = label_value
-
-                if len(melody_track) != len(melody_durations):
-                    print("   -> SKIP: notes and durations length mismatch")
+                if len(melody_track) < 20 or len(melody_track) != len(melody_durations):
+                    print(f"   -> SKIP {os.path.basename(file)}: track not suitable")
                     continue
 
+                # quick notes == danger
+                if avg_global_interval < DANGER_THRESHOLD:
+                    label = 0.0  # danger
+                    cat_str = "BATTLE"
+                else:
+                    label = 1.0  # safe
+                    cat_str = "SAFE"
+
+                print(f"Processing: {os.path.basename(file)} | Avg interval: {avg_global_interval:.2f}s -> {cat_str}")
+                
                 # just to make sure
                 str_durations = [str(d) for d in melody_durations]
 

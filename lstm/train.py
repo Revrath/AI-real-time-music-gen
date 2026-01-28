@@ -19,7 +19,7 @@ BATCH_SIZE = 128
 EPOCHS = 50 
 SEQUENCE_LENGTH = 50 # Must match preprocess.py
 def train_network():
-    with open('music_data.pkl', 'rb') as f:
+    with open('lstm-ai-music-gen/output/music_data_allff9_dangertreshold06.pkl', 'rb') as f:
         data = pickle.load(f)
         raw_notes = data['notes']
         raw_labels = data['labels']
