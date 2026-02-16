@@ -59,8 +59,6 @@ def load_ai():
     return model, raw_notes, raw_durations, note_to_int, dur_to_int, int_to_note, int_to_dur, device
 
 def generator_thread(model, raw_notes, raw_durs, n2i, d2i, i2n, i2d, device):
-    print("-> Wątek AI wystartował.")
-    
     # Seed
     start_idx = np.random.randint(0, len(raw_notes) - 33)
     # start_idx = 14226 # high quick notes
@@ -108,24 +106,21 @@ def generator_thread(model, raw_notes, raw_durs, n2i, d2i, i2n, i2d, device):
 
             current_danger = GLOBAL_STATE['danger_level']
 
-            # JEŚLI JEST BATTLE (0.0) -> ZABRANIAMY DŁUGICH NUT
+            # Battle => no long notes
             if current_danger < 0.2:
                 for d_str in SLOW_DURS:
                     if d_str in d2i:
                         idx = d2i[d_str]
-                        logits_d[idx] = -float('inf') # Ustawiamy szansę na ZERO
+                        logits_d[idx] = -float('inf')
 
-            # JEŚLI JEST SAFE (1.0) -> ZABRANIAMY BARDZO SZYBKICH NUT
             elif current_danger > 0.8:
                 for d_str in FAST_DURS:
                     if d_str in d2i:
                         idx = d2i[d_str]
-                        logits_d[idx] = -float('inf') # Ustawiamy szansę na ZERO
-            
-    # -------------------------------------------------------
+                        logits_d[idx] = -float('inf')
 
-            idx_n = robust_sample(logits_n, temperature=1.0) # Temp 1.0 dla nut (kreatywność)
-            idx_d = robust_sample(logits_d, temperature=1.0) # Temp 1.0 dla rytmu            
+            idx_n = robust_sample(logits_n, temperature=1.0)
+            idx_d = robust_sample(logits_d, temperature=1.0)
             # idx_n = robust_sample(logits_n, temperature=1)
             # idx_d = robust_sample(logits_d, temperature=1)
 
